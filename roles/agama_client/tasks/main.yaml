@@ -1,0 +1,44 @@
+- name: Adding user agama-client
+  user:
+    user: agama-client
+    state: present
+    shell: /bin/bash
+    comment: AGAMA Client
+
+- name: Create needed directory for agama-client
+  file:
+    path: /etc/agama-client
+    owner: agama-client
+    group: agama-client
+    state: directory
+
+- name: Installing needed packages for agama-client
+  apt:
+    name: fping
+    state: present
+
+- name: Installing agama-client.sh
+  template:
+    src: agama-client.sh.j2
+    dest: /usr/local/bin/agama-client
+    mode: '0777'
+
+- name: Installing needed dependencies for agama-client.sh
+  template:
+    src: "agama-client.{{ item.0 }}.j2"
+    dest: "{{ item.1 }}/agama-client.{{ item.0 }}"
+    owner: "{{ 'agama-client' if item.1 == '/etc/agama-client' else 'root' }}"
+    group: "{{ 'agama-client' if item.1 == '/etc/agama-client' else 'root' }}"
+  loop:
+    - ['conf', '/etc/agama-client']
+    - ['service', '/etc/systemd/system']
+  notify: Reload systemd
+
+- name: Flushing handlers
+  meta: flush_handlers
+
+- name: Enabling agama-client.service
+  service:
+    name: agama-client
+    state: started
+    enabled: true

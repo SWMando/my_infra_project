@@ -1,0 +1,24 @@
+- name: Installing package "uwsgi"
+  apt:
+    name: uwsgi
+    state: present
+
+- name: Installing package "uwsgi-plugin-python3"
+  apt:
+    name: uwsgi-plugin-python3
+    state: present
+
+- name: Copying agama.ini
+  template:
+    src: agama.ini.j2
+    dest: /etc/uwsgi/apps-enabled/agama.ini
+    owner: agama
+    mode: 0600
+  no_log: true
+  notify: Restart uwsgi
+
+- name: Starting uwsgi
+  service:
+    name: uwsgi
+    state: started
+    enabled: true

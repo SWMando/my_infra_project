@@ -1,0 +1,14 @@
+[Unit]
+Description=Influx exporter
+Documentation=https://github.com/carlpett/influxdb_stats_exporter
+
+[Service]
+Restart=on-failure
+User=prometheus
+ExecStart=/usr/local/bin/influx-stats-exporter
+ExecReload=/bin/kill -HUP $MAINPID
+TimeoutStopSec=20s
+SendSIGKILL=no
+
+[Install]
+WantedBy=multi-user.target

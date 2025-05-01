@@ -1,0 +1,14 @@
+# Configuration file version
+apiVersion: 1
+
+datasources:
+  - name: influxdb-agama
+    type: influxdb
+    access: proxy
+    orgId: 1
+    url: http://{{ groups['influxdb'][0] }}:8086
+    database: agama_client_db
+    uid: ee2uv8kfyvm68a 
+    isDefault: false
+    version: 1
+    editable: true

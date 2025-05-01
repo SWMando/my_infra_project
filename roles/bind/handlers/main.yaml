@@ -1,0 +1,21 @@
+- name: Restart bind
+  service:
+    name: named
+    state: restarted
+
+- name: Reload rndc
+  command: rndc reload
+
+#- name: Change name to prometheus-bind9-exporter
+#  command: mv /usr/local/bin/bind_exporter /usr/local/bin/prometheus-bind9-exporter
+#  args:
+#    creates: /usr/local/bin/prometheus-bind9-exporter
+
+- name: Systemd Reload
+  systemd:
+    daemon_reload: yes
+#
+#- name: Restart prometheus-bind9-exporter
+#  service:
+#    name: prometheus-bind9-exporter
+#    state: restarted

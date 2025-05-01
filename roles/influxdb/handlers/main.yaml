@@ -1,0 +1,26 @@
+- name: Update cache
+  apt:
+    update_cache: yes
+
+- name: Restart influxdb
+  service:
+    name: influxdb
+    state: restarted
+
+- name: Restart telegraf
+  service:
+    name: telegraf
+    state: restarted
+
+- name: Restart systemd
+  systemd:
+    daemon_reload: true
+
+- name: Restart cron
+  service:
+    name: cron
+    state: restarted
+
+- name: Reload rndc
+  command: rndc reload
+

@@ -1,0 +1,9 @@
+- name: Stop all running agama clients
+  shell: "docker {{ item }} $(docker ps -a | awk '/agama/ { print $1 }')"
+  loop:
+    - kill
+    - rm
+  when: all_containers.exists and all_containers.container.Config.Image == "agama"
+
+- name: Reload rndc
+  command: rndc reload

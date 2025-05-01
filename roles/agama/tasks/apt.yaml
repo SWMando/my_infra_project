@@ -1,0 +1,25 @@
+- name: Adding user "agama"
+  user:
+    user: agama
+    state: present
+    shell: /bin/bash
+    comment: AGAMA App
+
+- name: Adding directory "agama" owned by user "agama"
+  file:
+    path: /opt/agama
+    state: directory
+    owner: agama
+    group: agama
+
+- name: Installing needed dependencies for "agama.py"
+  apt:
+    name:
+      - python3-flask-sqlalchemy
+      - python3-pymysql
+    state: present
+
+- name: Installing "agama.py"
+  get_url:
+    url: https://raw.githubusercontent.com/anon_app_dev/agama/master/agama.py
+    dest: /opt/agama/agama.py

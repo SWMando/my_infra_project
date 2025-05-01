@@ -1,0 +1,17 @@
+$TTL	604800
+168.192.in-addr.arpa.	IN	SOA	ns.{{ my_domain }}. mail.{{ my_domain }}. (
+			      2		; Serial
+			 604800		; Refresh
+			  86400		; Retry
+			2419200		; Expire
+			 604800 	; Negative Cache TTL
+);
+{% for vm in groups['dns_masters']%}
+168.192.in-addr.arpa.	IN  NS	{{ vm }}.{{ my_domain }}.
+{% endfor %}
+{% for vm in groups['dns_slaves']%}
+168.192.in-addr.arpa.	IN  NS	{{ vm }}.{{ my_domain }}.
+{% endfor %}
+{% for vm in groups['all'] %}
+{{ hostvars[vm]['ansible_default_ipv4']['address'].split('.')[3] }}.{{ hostvars[vm]['ansible_default_ipv4']['address'].split('.')[2] }}	 	IN	PTR	{{ vm }}.{{ my_domain }}.
+{% endfor %}

@@ -1,0 +1,31 @@
+global_defs {
+    enable_script_security
+}
+vrrp_script check_haproxy {                 
+    script /opt/keepalived_script/vrrp_script.sh
+    weight 20                              
+    interval 1               
+}
+vrrp_instance agama {             
+    interface ens3
+    virtual_router_id 1
+    {% if inventory_hostname == 'swmando-1' %}
+    priority 100
+    {% else %}
+    priority 99
+    {% endif %}
+    advert_int 1                            
+    virtual_ipaddress {                     
+	192.168.{{ (hostvars['swmando-1']['ansible_default_ipv4']['address'].split('.')[2] | int + 58) }}.{{ hostvars['swmando-1']['ansible_default_ipv4']['address'].split('.')[3] }}/24
+    }
+    unicast_peer {                          
+{% for vm in groups['keepalived'] %}
+	{% if inventory_hostname != vm %}
+        {{ hostvars[vm]['ansible_default_ipv4']['address'] }}
+	{% endif %}
+{% endfor %}
+    }
+    track_script {
+        check_haproxy
+    }
+}

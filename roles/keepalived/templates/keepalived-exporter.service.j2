@@ -1,0 +1,13 @@
+[Unit]
+Description=Keepalived Exporter for Prometheus
+Documentation=https://github.com/mehdy/keepalived-exporter
+
+[Service]
+Restart=on-failure
+User=root
+#EnvironmentFile=/etc/default/prometheus-bind-exporter
+ExecStart=/usr/bin/keepalived-exporter
+
+[Install]
+WantedBy=multi-user.target
+

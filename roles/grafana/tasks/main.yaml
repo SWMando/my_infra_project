@@ -1,0 +1,72 @@
+- name: Installing Grafana Docker
+  community.docker.docker_container:
+    image: grafana/grafana
+    name: grafana
+    published_ports: "{{ grafana_port }}:3000"
+    volumes: /opt/grafana:/etc/grafana
+    restart_policy: "always"
+
+- name: Creating needed directories for Grafana
+  file:
+    path: "/opt/grafana/provisioning/{{ item }}"
+    state: directory
+  loop:
+    - dashboards
+    - datasources
+  notify: Restart grafana
+
+- name: Template grafana.ini.j2
+  template:
+    src: grafana.ini.j2
+    dest: /opt/grafana/grafana.ini
+    owner: 472
+    group: 472
+    mode: '0600'
+  no_log: true
+  notify: Restart grafana
+
+- name: Template datasource file
+  template:
+    src: default_datasrc.yaml.j2
+    dest: /opt/grafana/provisioning/datasources/default.yaml
+  notify: Restart grafana
+
+- name: Template dashboard file
+  template:
+    src: default_dash.yaml.j2
+    dest: /opt/grafana/provisioning/dashboards/default.yaml
+  notify: Restart grafana
+
+- name: Copy pre-created dashboard JSON
+  copy:
+    src: "{{ item }}.json"
+    dest: "/opt/grafana/provisioning/dashboards/{{ item }}.json"
+  loop:
+    - main
+    - rsyslog
+    - backups
+    - mysql
+  notify: Restart grafana
+
+#- name: Set grafana CNAME in dns-record role
+#  include_role:
+#    name: dns-records
+#  vars:
+#    var_record: grafana
+#    var_host: "{{ inventory_hostname }}"
+
+- name: Append CNAME records of the services to the database file
+  community.general.nsupdate:
+    key_name: "nsupdate.key"
+    key_algorithm: "hmac-sha256"
+    key_secret: "{{ nsupdate_key_secret }}"
+    server: "127.0.0.1"
+    zone: "{{ my_domain }}"
+    record: "{{ item.key }}"
+    type: "CNAME"
+    value: "{{ item.value }}"
+  run_once: true
+  notify: Reload rndc
+  delegate_to: "{{ groups['dns_masters'][0] }}"
+  with_items: "{{ (dns_cname_records | dict2items | slice(12))[2] }}"
+  no_log: true

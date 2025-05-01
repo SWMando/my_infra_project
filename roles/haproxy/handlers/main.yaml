@@ -1,0 +1,13 @@
+- name: Restart haproxy
+  service:
+    name: haproxy
+    state: restarted
+
+- name: Restart haproxy-exporter
+  service:
+    name: prometheus-haproxy-exporter
+    state: restarted
+
+- name: Reload rndc
+  command: rndc reload
+

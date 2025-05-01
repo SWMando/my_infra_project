@@ -1,0 +1,10 @@
+- name: Restart grafana
+  community.docker.docker_container:
+    name: grafana
+    image: grafana/grafana
+    state: started
+    restart: true
+
+- name: Reload rndc
+  command: rndc reload
+

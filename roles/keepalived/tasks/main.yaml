@@ -1,0 +1,51 @@
+- name: Install keepalived
+  apt:
+    name: keepalived
+    state: present
+
+- name: Templating the config
+  template:
+    src: keepalived.conf.j2
+    dest: /etc/keepalived/keepalived.conf
+  notify: Restart keepalived
+
+- name: Enable keepalived
+  service:
+    name: keepalived
+    state: started
+    enabled: true
+
+- name: Create keepalived_script user
+  user:
+    name: keepalived_script
+    shell: /sbin/nologin
+    comment: For Keepalived Script
+    create_home: true
+    home: "/opt/keepalived_script"
+
+- name: Template the script to the keepalived_script home directory
+  template:
+    src: vrrp_script.sh.j2
+    dest: /opt/keepalived_script/vrrp_script.sh
+    owner: keepalived_script
+    group: keepalived_script
+    mode: '0500'
+
+- name: Downloading keepalived-exporter
+  apt:
+    deb: http://backup/keepalived-exporter_1.4.0_linux_amd64.deb
+
+- name: Template service file for keepalived-exporter
+  template:
+    src: keepalived-exporter.service.j2
+    dest: /etc/systemd/system/keepalived-exporter.service
+  notify: Reload systemd
+
+- name: Flush Keepalived Handlers
+  meta: flush_handlers
+
+- name: Enable keepalived
+  service:
+    name: keepalived-exporter
+    state: started
+    enabled: true

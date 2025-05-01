@@ -1,0 +1,13 @@
+# Configuration file version
+apiVersion: 1
+
+datasources:
+  - name: prometheus 
+    type: prometheus
+    access: proxy
+    orgId: 1
+    url: http://{{ groups['prometheus'][0] }}:9090/prometheus
+    uid: fe2h0mmi7fmrkc 
+    isDefault: false
+    version: 1
+    editable: true

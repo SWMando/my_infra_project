@@ -1,0 +1,110 @@
+- name: Installing DNS bind package
+  apt:
+    name:
+      - bind9
+      - python3-dnspython
+    state: present
+
+- name: Copy named.conf
+  template:
+    src: bind.{{ item }}.j2
+    dest: /etc/bind/named.conf.{{ item }}
+  loop:
+    - options
+    - local
+  notify: Restart bind
+  no_log: true
+
+- name: Copy bindings
+  template:
+    src: db.itqurd.az.j2
+    dest: /var/cache/bind/db.itqurd.az
+    force: false
+  notify: Reload rndc
+  when: inventory_hostname in groups['dns_masters']
+
+- name: Copy bindings
+  template:
+    src: db.rev.j2
+    dest: /var/cache/bind/db.rev
+    #force: false
+  notify: Restart bind
+  when: inventory_hostname in groups['dns_masters']
+
+- name: Flush DNS handlers
+  meta: flush_handlers
+
+- name: Append new records to the database file
+  community.general.nsupdate:
+    key_name: "nsupdate.key"
+    key_algorithm: "hmac-sha256"
+    key_secret: "{{ nsupdate_key_secret }}"
+    server: "127.0.0.1"
+    zone: "{{ my_domain }}"
+    record: "{{ item.key }}"
+    type: "A"
+    value: "{{ item.value }}"
+  loop: "{{ dns_a_records | dict2items }}"
+  run_once: true
+  notify: Reload rndc
+  when: inventory_hostname in groups['dns_masters']
+  no_log: true
+
+- name: Installing prometheus-bind-exporter
+  unarchive:
+    remote_src: true
+    src: https://github.com/prometheus-community/bind_exporter/releases/download/v0.6.1/bind_exporter-0.6.1.linux-amd64.tar.gz
+    dest: /opt/
+    extra_opts:
+      - --strip-components=1
+      - --wildcards
+      - '*/bind_exporter'
+
+- name: Creating a link prometheus-bind9-exporter
+  file:
+    src: /opt/bind_exporter
+    dest: /usr/local/bin/prometheus-bind9-exporter
+    state: link
+
+- name:
+  template:
+    src: prometheus-bind9-exporter.service.j2
+    dest: /etc/systemd/system/prometheus-bind9-exporter.service
+  notify: Systemd Reload
+
+- name:
+  service:
+    name: prometheus-bind9-exporter
+    state: started
+    enabled: true
+  notify: Restart bind
+
+#- name: Set Bind CNAME to dns-record role
+#  include_role:
+#    name: dns-records
+#  vars:
+#    var_record: "{{ item.key }}"
+#    var_host: "{{ item.value }}"
+#  with_items: "{{ dns_cname_records | dict2items | slice(6,8) }}"
+
+- name: Append CNAME records of the services to the database file
+  community.general.nsupdate:
+    key_name: "nsupdate.key"
+    key_algorithm: "hmac-sha256"
+    key_secret: "{{ nsupdate_key_secret }}"
+    server: "127.0.0.1"
+    zone: "{{ my_domain }}"
+    record: "{{ item.key }}"
+    type: "CNAME"
+    value: "{{ item.value }}"
+  run_once: true
+  notify: Reload rndc
+  delegate_to: "{{ groups['dns_masters'][0] }}"
+  with_items: "{{ (dns_cname_records | dict2items)[6:9]}}"
+  no_log: true
+
+- name: Enable Bind
+  service:
+    name: named
+    state: started
+    enabled: true

@@ -1,0 +1,17 @@
+$TTL	604800
+{{ my_domain }}.	IN	SOA	ns.{{ my_domain }}. mail.{{ my_domain }}. (
+			      2		; Serial
+			 604800		; Refresh
+			  86400		; Retry
+			2419200		; Expire
+			 604800 	; Negative Cache TTL
+);
+{% for vm in groups['dns_masters']%}
+{{ my_domain }}.	IN  NS	{{ vm }}
+{% endfor %}
+{% for vm in groups['dns_slaves']%}
+{{ my_domain }}.	IN  NS	{{ vm }}
+{% endfor %}
+{% for vm in groups['all'] %}
+{{ vm }}	 	IN	A	{{ hostvars[vm]['ansible_default_ipv4']['address'] }}
+{% endfor %}

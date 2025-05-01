@@ -1,0 +1,45 @@
+swmando-1 ansible_host=public_ip ansible_port=17322 ansible_user=ubuntu
+swmando-2 ansible_host=public_ip ansible_port=10622 ansible_user=ubuntu
+swmando-3 ansible_host=public_ip ansible_port=5922 ansible_user=ubuntu
+
+[db_servers]
+swmando-2
+swmando-1
+
+[web_servers]
+swmando-1 
+swmando-2
+
+[dns_masters]
+swmando-3
+
+[dns_slaves]
+swmando-1
+swmando-2
+
+[dns_servers:children]
+dns_masters
+dns_slaves
+
+[prometheus]
+swmando-3
+
+[grafana]
+swmando-3
+
+[influxdb]
+swmando-3
+
+[docker]
+swmando-2
+swmando-1
+swmando-3
+
+[keepalived]
+swmando-2
+swmando-1
+
+[haproxy]
+swmando-2
+swmando-1
+

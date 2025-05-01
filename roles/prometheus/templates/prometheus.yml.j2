@@ -1,0 +1,60 @@
+# Sample config for Prometheus.
+{% set keys = dns_cname_records.keys() | list %}
+global:
+  scrape_interval:     15s # Set the scrape interval to every 15 seconds. Default is every 1 minute.
+  evaluation_interval: 15s # Evaluate rules every 15 seconds. The default is every 1 minute.
+scrape_configs:
+  # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
+  - job_name: 'prometheus'
+
+    # Override the global default and scrape targets from this job every 5 seconds.
+    scrape_interval: 5s
+    scrape_timeout: 5s
+
+    metrics_path: '/prometheus/metrics'
+    # scheme defaults to 'http'.
+
+    static_configs:
+      - targets: ['prometheus:9090']
+
+  - job_name: linux
+    # If prometheus-node-exporter is installed, grab stats about the local
+    # machine by default.
+    static_configs:
+      - targets: [{% for vm in groups['all'] %}'{{ vm }}:9100'{% if not loop.last %}, {% endif %}{% endfor %}]
+
+  - job_name: 'mysql'
+    # prometheus-mysql-exporter, uses port 9104
+    static_configs:
+#      - targets: ["{{ groups['db_servers'][0] }}:9104"]
+      - targets: [{% for vm in keys[0:2] %}'{{ vm }}:9104'{% if not loop.last %}, {% endif %}{% endfor %}]
+
+  - job_name: 'bind'
+    # prometheus-bind-exporter (INSTALLED MANUALLY), uses port 9119 
+    static_configs:
+      - targets: [{% for vm in keys[6:9] %}'{{ vm }}:9119'{% if not loop.last %}, {% endif %}{% endfor %}]
+
+  - job_name: 'nginx'
+    # prometheus-nginx-exporter, uses port 9113
+    static_configs:
+      - targets: [{% for vm in keys[10:11 + 1] %}'{{ vm }}:9113'{% if not loop.last %}, {% endif %}{% endfor %}]
+
+  - job_name: 'influx'
+    # influx-exporter (INSTALLED MANUALLY, not prometheus, but logic is the same), uses port 9424
+    static_configs:
+      - targets: ["influxdb:9424"]
+
+  - job_name: 'backups'
+    #
+    static_configs:
+      - targets: ['backup.itqurd.az:9111']
+
+  - job_name: 'haproxy'
+    # prometheus-haproxy-exporter, uses port 9101
+    static_configs:
+      - targets: [{% for vm in keys[4:6] %}'{{ vm }}:9101'{% if not loop.last %}, {% endif %}{% endfor %}]
+
+  - job_name: 'keepalived'
+    # keepalived-exporter (INSTALLED MANUALLY, not prometheus, but logic is the same), uses port XXx
+    static_configs:
+      - targets: [{% for vm in keys[4:6] %}'{{ vm }}:9165'{% if not loop.last %}, {% endif %}{% endfor %}]

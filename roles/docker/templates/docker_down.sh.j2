@@ -1,0 +1,5 @@
+#!/bin/bash
+
+docker kill $(docker ps -a | awk 'FNR != 1 {print $1}')
+docker rm $(docker ps -a | awk 'FNR != 1 {print $1}')
+ 

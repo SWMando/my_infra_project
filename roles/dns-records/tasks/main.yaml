@@ -1,0 +1,14 @@
+- name: Append CNAME records of the services to the database file
+  community.general.nsupdate:
+    key_name: "nsupdate.key"
+    key_algorithm: "hmac-sha256"
+    key_secret: "{{ nsupdate_key_secret }}"
+    server: "127.0.0.1"
+    zone: "{{ my_domain }}"
+    record: "{{ var_record }}"
+    type: "CNAME"
+    value: "{{ var_host }}"
+  run_once: true
+  notify: Reload rndc
+  when: var_record is defined and var_record != ''
+  delegate_to: "{{ groups['dns_masters'][0] }}"

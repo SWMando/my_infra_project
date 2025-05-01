@@ -1,0 +1,89 @@
+---
+#- name: Testing for Debug
+#  hosts: all
+#  roles:
+#    - debug
+#  tags: t
+
+- name: Initial setup
+  hosts: all
+  roles:
+    - init
+  tags: i
+
+- name: DNS server
+  hosts: dns_servers
+  roles:
+    - bind
+  tags: b
+
+- name: File resolv.conf
+  hosts: all
+  roles:
+    - dns-resolv
+  tags: r
+
+- name: Docker
+  hosts: docker
+  roles:
+    - docker
+  tags: d
+
+- name: Database
+  hosts: db_servers
+  roles:
+    - mysql
+  tags:
+    - m
+    - mx
+
+- name: Prometheus Monitoring
+  hosts: prometheus
+  roles:
+    - nginx
+    - prometheus
+  tags: p
+
+- name: Grafana Visual
+  hosts: grafana
+  roles:
+    - nginx
+    - docker
+    - grafana
+  tags: g
+
+- name: InfluxDB OSS
+  hosts: influxdb
+  roles:
+    - influxdb
+    - agama_client
+  tags: f
+
+- name: Web Server
+  hosts: web_servers
+  roles:
+    - docker
+    - agama
+#    - uwsgi
+    - nginx
+  tags:
+    - w
+    - mx
+
+- name: Keepalived
+  hosts: keepalived
+  roles:
+    - keepalived
+  tags: k
+
+- name: HAproxy
+  hosts: haproxy
+  roles:
+    - haproxy
+  tags: h
+
+#- name: dns-records
+#  hosts: dns_servers
+#  roles:
+#    - dns-records
+#  tags: dr

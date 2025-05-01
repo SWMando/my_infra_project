@@ -1,0 +1,45 @@
+- name: INstalling Prometheus
+  apt:
+    name: prometheus
+    state: present
+
+- name: Service Prometheus
+  service:
+    name: prometheus
+    state: started
+    enabled: true
+
+- name: Uplaod Prometheus config /etc/prometheus/prometheus.yml
+  template:
+    src: prometheus.yml.j2
+    dest: /etc/prometheus/prometheus.yml
+  notify: Restart Prometheus
+
+- name: Upload Prometheus config to /etc/default/prometheus
+  template:
+    src: prometheus.j2
+    dest: /etc/default/prometheus
+  notify: Restart Prometheus
+
+#- name: Set Prometheus CNAME to dns-record role
+#  include_role:
+#    name: dns-records
+#  vars:
+#    var_record: prometheus
+#    var_host: "{{ inventory_hostname }}"
+
+- name: Append CNAME records of the services to the database file
+  community.general.nsupdate:
+    key_name: "nsupdate.key"
+    key_algorithm: "hmac-sha256"
+    key_secret: "{{ nsupdate_key_secret }}"
+    server: "127.0.0.1"
+    zone: "{{ my_domain }}"
+    record: "{{ item.key }}"
+    type: "CNAME"
+    value: "{{ item.value }}"
+  run_once: true
+  notify: Reload rndc
+  delegate_to: "{{ groups['dns_masters'][0] }}"
+  with_items: "{{ (dns_cname_records | dict2items | slice(12))[9] }}"
+  no_log: true

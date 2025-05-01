@@ -1,0 +1,83 @@
+- name: Add Grafana GPG key
+  apt_key:
+    url: https://apt.grafana.com/gpg.key
+    state: present
+    keyring: /etc/apt/keyrings/grafana.gpg
+
+- name: Add Grafana repository to apt sources
+  apt_repository:
+    repo: "deb [signed-by=/etc/apt/keyrings/grafana.gpg] https://apt.grafana.com/ stable main"
+    state: present
+  notify: Update cache
+
+- name: Install Grafana
+  apt:
+    name: grafana
+    state: present
+
+- name: Enable Grafana
+  service:
+    name: grafana-server
+    state: started
+    enabled: true
+
+- name: Template grafana.ini.j2
+  template:
+    src: grafana.ini.j2
+    dest: /etc/grafana/grafana.ini
+  notify: Restart Grafana
+
+- name: Template datasource file
+  template:
+    src: "{{ item }}_datasrc.yaml.j2"
+    dest: "/etc/grafana/provisioning/datasources/{{ item }}_datasrc.yaml"
+  loop:
+    - prometheus
+    - influx
+    - rsyslog
+    - backups
+    - mysql
+  notify: Restart Grafana
+
+- name: Template dashboard yaml
+  template:
+    src: "{{ item }}_dash.yaml.j2"
+    dest: "/etc/grafana/provisioning/dashboards/{{ item }}_dash.yaml"
+  loop:
+    - prometheus
+    - influx
+    - rsyslog
+    - backups
+    - mysql
+  notify: Restart Grafana
+
+- name: Create directory dashboards
+  file:
+    path: /var/lib/grafana/dashboards
+    state: directory
+    owner: grafana
+    group: grafana
+    mode: '0755'
+
+- name: Copy pre-created dashboard JSON
+  copy:
+    src: "{{ item }}.json"
+    dest: "/var/lib/grafana/dashboards/{{ item }}.json"
+    owner: grafana
+    group: grafana
+    mode: '0644'
+  loop:
+    - main
+    - agama_client
+    - rsyslog
+    - backups
+    - mysql
+  notify: Restart Grafana
+
+- name: Copy delete script
+  copy:
+    src: grafana_delete_script.sh
+    dest: /opt/
+    owner: root
+    group: root
+    mode: '0744'

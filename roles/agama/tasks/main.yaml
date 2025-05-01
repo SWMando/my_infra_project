@@ -1,0 +1,91 @@
+- name: Adding directory "agama" owned by user "agama"
+  file:
+    path: /opt/agama
+    state: directory
+
+- name: Copying agama_container_del.sh
+  copy:
+    src: agama_container_del.sh
+    dest: /opt/agama/agama_container_del.sh
+    owner: root
+    group: root
+    mode: '0600'
+
+- name: Installing needed dependencies for "agama.py"
+  apt:
+    name:
+      - python3-flask-sqlalchemy
+      - python3-pymysql
+    state: present
+
+- name: Installing "agama.py"
+  get_url:
+    url: "https://raw.githubusercontent.com/anon_app_dev/agama/refs/heads/master/{{ item }}"
+    dest: "/opt/agama/{{ item }}"
+  loop:
+    - agama.py
+    - Dockerfile
+
+- name: Building Docker image for AGAMA
+  community.docker.docker_image:
+    name: agama
+    source: build
+    build:
+      path: /opt/agama
+
+- name: Check if there are any containers
+  community.docker.docker_container_info:
+    name: ""
+  register: all_containers
+
+- name: Get Docker host info
+  community.docker.docker_host_info:
+    containers: true
+  register: docker_info
+
+- name: Count containers with Image 'agama'
+  set_fact:
+    agama_container_count: "{{ docker_info.containers | selectattr('Image', 'equalto', 'agama') | list | length }}"
+
+- name: Stop all running agama clients
+  shell: bash /opt/agama/agama_container_del.sh
+  when: all_containers.exists == true and all_containers.container.Config.Image == "agama" and agama_container_count | int != agama_cont
+
+- name: Starting AGAMA Docker Container
+  community.docker.docker_container:
+    name: "agama_{{ item }}"
+    image: agama
+    published_ports: "{{ 8000 + item }}:8000"
+    env:
+      AGAMA_DATABASE_URI: mysql+pymysql://{{ mysql_user }}:{{ mysql_password }}@{{ mysql_host }}/{{ mysql_database }}
+    restart_policy: "always"
+  no_log: true
+  loop: "{{ range(1, agama_cont + 1) | list }}"
+
+#- name: Set AGAMA CNAME to dns-record role
+#  include_role:
+#    name: dns-records
+#  vars:
+#    var_record: "{{ inventory_hostname | replace('swmando', 'www')}}"
+#    var_host: "{{ inventory_hostname }}"
+
+#- name:
+#  set_fact:    
+#    items: "{{ dns_cname_records }}"
+
+- name: Append CNAME records of the services to the database file
+  community.general.nsupdate:
+    key_name: "nsupdate.key"
+    key_algorithm: "hmac-sha256"
+    key_secret: "{{ nsupdate_key_secret }}"
+    server: "127.0.0.1"
+    zone: "{{ my_domain }}"
+    record: "{{ item.key }}"
+    type: "CNAME"
+    value: "{{ item.value }}"
+  run_once: true
+  notify: Reload rndc
+  delegate_to: "{{ groups['dns_masters'][0] }}"
+  with_items: "{{ (dns_cname_records | dict2items)[10:12]}}"
+  no_log: true
+

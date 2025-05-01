@@ -1,0 +1,8 @@
+- name: Restart Prometheus
+  service:
+    name: prometheus
+    state: restarted
+
+- name: Reload rndc
+  command: rndc reload
+

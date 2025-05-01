@@ -1,0 +1,60 @@
+- name: Installing haproxy
+  apt:
+    name: haproxy
+    state: present
+
+- name: Templating config
+  template:
+    src: haproxy.cfg.j2
+    dest: /etc/haproxy/haproxy.cfg
+  notify: Restart haproxy
+
+- name: Enabling service
+  service:
+    name: haproxy
+    state: started
+    enabled: true
+
+- name: Flush haproxy Handlers
+  meta: flush_handlers
+
+- name: Installing prometheus-haproxy-exporter
+  apt:
+    name: prometheus-haproxy-exporter
+    state: present
+
+- name: Tempalte config for prometheus-haproxy-exporter
+  template:
+    src: prometheus-haproxy-exporter.j2
+    dest: /etc/default/prometheus-haproxy-exporter
+  notify: Restart haproxy-exporter
+
+- name: Enabling prometheus-haproxy-exporter
+  service:
+    name: prometheus-haproxy-exporter
+    state: started
+    enabled: true
+
+#- name: Set HAproxy CNAME to dns-record role
+#  include_role:
+#    name: dns-records
+#  vars:
+#    var_record: "{{ item | replace('swmando', 'lb') }}"
+#    var_host: "{{ item }}"
+#  with_items: "{{ groups['haproxy']}}"
+
+- name: Append CNAME records of the services to the database file
+  community.general.nsupdate:
+    key_name: "nsupdate.key"
+    key_algorithm: "hmac-sha256"
+    key_secret: "{{ nsupdate_key_secret }}"
+    server: "127.0.0.1"
+    zone: "{{ my_domain }}"
+    record: "{{ item.key }}"
+    type: "CNAME"
+    value: "{{ item.value }}"
+  run_once: true
+  notify: Reload rndc
+  delegate_to: "{{ groups['dns_masters'][0] }}"
+  with_items: "{{ (dns_cname_records | dict2items)[4:6]}}"
+  no_log: true

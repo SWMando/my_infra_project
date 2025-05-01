@@ -1,0 +1,11 @@
+[Unit]
+Description=AGAMA-Client service for the script
+Documentation=https://github.com/robochicken/ica0002-2024/tree/main/08-logging
+After=network-online.target
+
+[Service]
+User=agama-client
+ExecStart=/usr/local/bin/agama-client
+
+[Install]
+WantedBy=multi-user.target

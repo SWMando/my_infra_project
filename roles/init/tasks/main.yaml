@@ -1,0 +1,76 @@
+# - name: Ansible ping module
+#   ansible.builtin.ping:
+
+# - name: Adding user "tty_usery"
+#   ansible.builtin.user:
+#     user: tty_usery
+#     state: present
+#     shell: /bin/bash
+#     comment: Juri Hudoleyev
+#   
+# - name: Adding authorized key for "tty_usery" 
+#   ansible.posix.authorized_key:
+#     user: tty_usery
+#     state: present
+#     key: https://github.com/anon_app_dev.keys
+# 
+# - name: Adding user "tty_userr"
+#   ansible.builtin.user:
+#     user: tty_userr
+#     state: present
+#     shell: /bin/bash
+#     comment: Roman Kuchin
+# 
+# - name: Adding authorized key for "tty_userr"
+#   ansible.posix.authorized_key:
+#     user: tty_userr
+#     state: present
+#     key: https://github.com/robochicken.keys
+
+- name: Updating APT cache
+  ansible.builtin.apt:
+    cache_valid_time: 86400
+
+- name: Installing prometheus-node-exporter
+  apt:
+    name: prometheus-node-exporter
+    state: present
+
+- name: Enable prometheus-node-exporter
+  service:
+    name: prometheus-node-exporter
+    state: started
+    enabled: true
+
+- name: Templating config for rsyslog
+  template:
+    src: telegraf.conf.j2
+    dest: /etc/rsyslog.d/50-telegraf.conf
+  notify: Restart rsyslog
+
+- name: Create User for backup
+  user:
+    name: backup
+    comment: For Backup
+    create_home: true
+    home: /home/backup
+    generate_ssh_key: true
+  no_log: true
+
+- name: Template known_hosts
+  template:
+    src: known_hosts.j2
+    dest: /home/backup/.ssh/known_hosts
+  no_log: true
+
+- name: Create /home/backup/restore directory
+  file:
+    path: /home/backup/restore
+    state: directory
+    owner: backup
+    group: backup
+  
+- name: Installing duplicity package
+  apt:
+    name: duplicity
+    state: present

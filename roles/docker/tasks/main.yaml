@@ -1,0 +1,17 @@
+- name: Installing Docker and Ansible Python Library for Docker
+  apt:
+    name:
+      - docker.io
+      - python3-docker
+    state: present
+
+- name: Enabling service Docker
+  service:
+    name: docker
+    state: started
+    enabled: true
+
+- name:
+  template:
+    src: docker_down.sh.j2
+    dest: /opt/docker_down.sh

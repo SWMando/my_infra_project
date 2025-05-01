@@ -1,0 +1,145 @@
+#- name: Show Hosts
+#  debug: 
+#    msg:
+##      - "Host {{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}"
+#      - "{{ hostvars[inventory_hostname] }}"
+#
+#- name: Show Groups
+#  debug:
+#    msg: "{{ groups }}"
+
+#- name: Get information about all Docker containers
+#  community.docker.docker_container_info:
+#    name: "{{ item }}"
+#  loop:
+#    - "agama_{{ range(1, agama_cont + 1) }}"
+#  register: all_containers
+#
+#- name: Display information about all Docker containers
+#  debug:
+#    var: all_containers
+
+
+#- name: Count containers with Image 'agama'
+#  set_fact:
+#    agama_container_count: "{{ docker_info.containers | selectattr('Image', 'equalto', 'agama') | list | length }}"
+#
+#- name: Debug the count
+#  debug:
+#    var: agama_container_count
+#
+#- name: Compare agama_container_count with agama_cont
+#  debug:
+#    msg: >
+#      {% if agama_container_count | int == agama_cont %}
+#        The number of containers using 'agama' image matches the expected count: {{ agama_cont }}.
+#      {% else %}
+#        Mismatch detected! Count of containers using 'agama': {{ agama_container_count }}. Expected count: {{ agama_cont }}.
+#      {% endif %}
+#
+#- name: Stop all running agama clients
+#  shell: "docker {{ item }} $(docker ps -a | awk '/agama/ { print $1 }')"
+#  loop:
+#    - kill
+#    - rm
+#  when: agama_container_count | int != agama_cont
+
+#- name: List members of dns_servers
+#  debug:
+#    var: groups['dns_slaves']
+
+#- name:
+#  command: bash /opt/docker_down.sh
+# 
+
+#- name:
+#  command: docker ps -a --format '{% raw %}{{.ID}} {{.Status}}{% endraw %}'
+#  register: docker_containers
+#
+#- name:
+#  set_fact:
+#    containers: "{{ docker_containers.stdout_lines }}"
+
+#    containers: "{{ docker_containers.stdout_lines | map('split','',1) | list }}"
+
+#- name:
+#  debug:
+#    var: containers
+
+#- name: test
+#  vars:
+#    container_id: "{{ item.0 }}"
+#    container_status: "{{ item.1 }}"
+#  loop: "{{ containers }}"
+
+#- name: Get Docker host info
+#  community.docker.docker_host_info:
+#    containers: true
+#  register: docker_info
+#
+#- name: Print number of containers
+#  debug:
+#    var: docker_info.containers | length
+
+
+#- name: Building Docker image for AGAMA
+#  community.docker.docker_image:
+#    name: agama
+#    source: build
+#    build:
+#      path: /opt/agama
+
+- name: Check if there are any containers
+  community.docker.docker_container_info:
+    name: ""
+  register: all_containers
+
+- name: Get Docker host info
+  community.docker.docker_host_info:
+    containers: true
+  register: docker_info
+
+- name: Count containers with Image 'agama'
+  set_fact:
+    agama_container_count: "{{ docker_info.containers | selectattr('Image', 'equalto', 'agama') | list | length }} "
+
+- name: Print docker_info.containers
+  debug:
+    var: docker_info.containers
+#      - 
+- name: Print agama_container_count
+  debug:
+    var: agama_container_count
+
+- name:
+  command: docker ps -a --format '{% raw %}{{.ID}} {{.Status}}{% endraw %}'
+  register: docker_containers
+
+- name: Print docker_containers
+  debug:
+    var: "{{ docker_containers.stdout_lines[0].split()[1] | type_debug }} "
+
+- name:
+  set_fact:
+    containers: "{{ docker_containers.stdout_lines }}"
+
+#    containers: "{{ docker_containers.stdout_lines | map('split','',1) | list }}"
+
+#- name: Stop all running agama clients
+#  shell: "docker {{ item }} $(docker ps -a | awk '/agama/ { print $1 }')"
+#  loop:
+#    - kill
+#    - rm
+#  when: all_containers.exists == true and all_containers.container.Config.Image == "agama" and agama_container_count | int != agama_cont
+#
+#- name: Starting AGAMA Docker Container
+#  community.docker.docker_container:
+#    name: "agama_{{ item }}"
+#    image: agama
+#    published_ports: "{{ 8000 + item }}:8000"
+#    env:
+#      AGAMA_DATABASE_URI: mysql+pymysql://{{ mysql_user }}:{{ mysql_password }}@{{ mysql_host }}/{{ mysql_database }}
+#    restart_policy: "always"
+#  no_log: true
+#  loop: "{{ range(1, agama_cont + 1) | list }}"
+

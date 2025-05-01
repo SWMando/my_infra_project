@@ -1,0 +1,7 @@
+- name: Restart Everything
+  service:
+    name:
+      - nginx
+      - uwsgi
+      - mysql
+    state: restarted

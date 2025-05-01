@@ -1,0 +1,36 @@
+# Configuration file version
+apiVersion: 1
+
+datasources:
+# The Prometheus Monitoing, related dashboards are (Main, MySQL, Backups)
+  - name: prometheus 
+    type: prometheus
+    access: proxy
+    orgId: 1
+    url: http://prometheus:9090/prometheus
+    uid: fe2h0mmi7fmrkc 
+    isDefault: false
+    version: 1
+    editable: true
+# The rsyslog telegraf, related dashboards are (Rsyslog)
+  - name: influxdb-telegraf
+    type: influxdb
+    access: proxy
+    orgId: 1
+    url: http://influxdb:8086
+    database: telegraf
+    uid: ae2vlrewbzhtse
+    isDefault: false
+    version: 1
+    editable: true
+# The AGAMA script for checking others AGAMA App, related dashboards are (Agama_Client)
+  - name: influxdb-agama
+    type: influxdb
+    access: proxy
+    orgId: 1
+    url: http://influxdb:8086
+    database: agama_client_db
+    uid: ee2uv8kfyvm68a 
+    isDefault: false
+    version: 1
+    editable: true

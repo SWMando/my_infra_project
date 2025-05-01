@@ -1,0 +1,186 @@
+# Telegraf Configuration
+#
+# Telegraf is entirely plugin driven. All metrics are gathered from the
+# declared inputs, and sent to the declared outputs.
+#
+# Plugins must be declared in here to be active.
+# To deactivate a plugin, comment out the name and any variables.
+#
+# Use 'telegraf -config telegraf.conf -test' to see what metrics a config
+# file would generate.
+#
+# Environment variables can be used anywhere in this config file, simply surround
+# them with ${}. For strings the variable must be within quotes (ie, "${STR_VAR}"),
+# for numbers and booleans they should be plain (ie, ${INT_VAR}, ${BOOL_VAR})
+
+
+# Configuration for sending metrics to InfluxDB
+[[outputs.influxdb]]
+  ## The full HTTP or UDP URL for your InfluxDB instance.
+  ##
+  ## Multiple URLs can be specified for a single cluster, only ONE of the
+  ## urls will be written to each interval.
+  # urls = ["unix:///var/run/influxdb.sock"]
+  # urls = ["udp://127.0.0.1:8089"]
+  # urls = ["http://127.0.0.1:8086"]
+
+  ## Local address to bind when connecting to the server
+  ## If empty or not set, the local address is automatically chosen.
+  # local_address = ""
+
+  ## The target database for metrics; will be created as needed.
+  ## For UDP url endpoint database needs to be configured on server side.
+  # database = "telegraf"
+
+  ## The value of this tag will be used to determine the database.  If this
+  ## tag is not set the 'database' option is used as the default.
+  # database_tag = ""
+
+  ## If true, the 'database_tag' will not be included in the written metric.
+  # exclude_database_tag = false
+
+  ## If true, no CREATE DATABASE queries will be sent.  Set to true when using
+  ## Telegraf with a user without permissions to create databases or when the
+  ## database already exists.
+  # skip_database_creation = false
+
+  ## Name of existing retention policy to write to.  Empty string writes to
+  ## the default retention policy.  Only takes effect when using HTTP.
+  # retention_policy = ""
+
+  ## The value of this tag will be used to determine the retention policy.  If this
+  ## tag is not set the 'retention_policy' option is used as the default.
+  # retention_policy_tag = ""
+
+  ## If true, the 'retention_policy_tag' will not be included in the written metric.
+  # exclude_retention_policy_tag = false
+
+  ## Write consistency (clusters only), can be: "any", "one", "quorum", "all".
+  ## Only takes effect when using HTTP.
+  # write_consistency = "any"
+
+  ## Timeout for HTTP messages.
+  # timeout = "5s"
+
+  ## HTTP Basic Auth
+  # username = "telegraf"
+  # password = "metricsmetricsmetricsmetrics"
+
+  ## HTTP User-Agent
+  # user_agent = "telegraf"
+
+  ## UDP payload size is the maximum packet size to send.
+  # udp_payload = "512B"
+
+  ## Optional TLS Config for use on HTTP connections.
+  # tls_ca = "/etc/telegraf/ca.pem"
+  # tls_cert = "/etc/telegraf/cert.pem"
+  # tls_key = "/etc/telegraf/key.pem"
+  ## Use TLS but skip chain & host verification
+  # insecure_skip_verify = false
+
+  ## HTTP Proxy override, if unset values the standard proxy environment
+  ## variables are consulted to determine which proxy, if any, should be used.
+  # http_proxy = "http://corporate.proxy:3128"
+
+  ## Additional HTTP headers
+  # http_headers = {"X-Special-Header" = "Special-Value"}
+
+  ## HTTP Content-Encoding for write request body, can be set to "gzip" to
+  ## compress body or "identity" to apply no encoding.
+  # content_encoding = "gzip"
+
+  ## When true, Telegraf will output unsigned integers as unsigned values,
+  ## i.e.: "42u".  You will need a version of InfluxDB supporting unsigned
+  ## integer values.  Enabling this option will result in field type errors if
+  ## existing data has been written.
+  # influx_uint_support = false
+
+  ## When true, Telegraf will omit the timestamp on data to allow InfluxDB
+  ## to set the timestamp of the data during ingestion. This is generally NOT
+  ## what you want as it can lead to data points captured at different times
+  ## getting omitted due to similar data.
+  # influx_omit_timestamp = false
+
+
+###############################################################################
+#                            SERVICE INPUT PLUGINS                            #
+###############################################################################
+
+
+[[inputs.syslog]]
+  ## Protocol, address and port to host the syslog receiver.
+  ## If no host is specified, then localhost is used.
+  ## If no port is specified, 6514 is used (RFC5425#section-4.1).
+  ##   ex: server = "tcp://localhost:6514"
+  ##       server = "udp://:6514"
+  ##       server = "unix:///var/run/telegraf-syslog.sock"
+  ## When using tcp, consider using 'tcp4' or 'tcp6' to force the usage of IPv4
+  ## or IPV6 respectively. There are cases, where when not specified, a system
+  ## may force an IPv4 mapped IPv6 address.
+  server = "udp://:6514"
+
+  ## Permission for unix sockets (only available on unix sockets)
+  ## This setting may not be respected by some platforms. To safely restrict
+  ## permissions it is recommended to place the socket into a previously
+  ## created directory with the desired permissions.
+  ##   ex: socket_mode = "777"
+  # socket_mode = ""
+
+  ## Maximum number of concurrent connections (only available on stream sockets like TCP)
+  ## Zero means unlimited.
+  # max_connections = 0
+
+  ## Read timeout (only available on stream sockets like TCP)
+  ## Zero means unlimited.
+  # read_timeout = "0s"
+
+  ## Optional TLS configuration (only available on stream sockets like TCP)
+  # tls_cert = "/etc/telegraf/cert.pem"
+  # tls_key  = "/etc/telegraf/key.pem"
+  ## Enables client authentication if set.
+  # tls_allowed_cacerts = ["/etc/telegraf/clientca.pem"]
+
+  ## Maximum socket buffer size (in bytes when no unit specified)
+  ## For stream sockets, once the buffer fills up, the sender will start
+  ## backing up. For datagram sockets, once the buffer fills up, metrics will
+  ## start dropping. Defaults to the OS default.
+  # read_buffer_size = "64KiB"
+
+  ## Period between keep alive probes (only applies to TCP sockets)
+  ## Zero disables keep alive probes. Defaults to the OS configuration.
+  # keep_alive_period = "5m"
+
+  ## Content encoding for message payloads
+  ## Can be set to "gzip" for compressed payloads or "identity" for no encoding.
+  # content_encoding = "identity"
+
+  ## Maximum size of decoded packet (in bytes when no unit specified)
+  # max_decompression_size = "500MB"
+
+  ## Framing technique used for messages transport
+  ## Available settings are:
+  ##   octet-counting  -- see RFC5425#section-4.3.1 and RFC6587#section-3.4.1
+  ##   non-transparent -- see RFC6587#section-3.4.2
+  # framing = "octet-counting"
+
+  ## The trailer to be expected in case of non-transparent framing (default = "LF").
+  ## Must be one of "LF", or "NUL".
+  # trailer = "LF"
+
+  ## Whether to parse in best effort mode or not (default = false).
+  ## By default best effort parsing is off.
+  # best_effort = false
+
+  ## The RFC standard to use for message parsing
+  ## By default RFC5424 is used. RFC3164 only supports UDP transport (no streaming support)
+  ## Must be one of "RFC5424", or "RFC3164".
+  # syslog_standard = "RFC5424"
+
+  ## Character to prepend to SD-PARAMs (default = "_").
+  ## A syslog message can contain multiple parameters and multiple identifiers within structured data section.
+  ## Eg., [id1 name1="val1" name2="val2"][id2 name1="val1" nameA="valA"]
+  ## For each combination a field is created.
+  ## Its name is created concatenating identifier, sdparam_separator, and parameter name.
+  # sdparam_separator = "_"
+

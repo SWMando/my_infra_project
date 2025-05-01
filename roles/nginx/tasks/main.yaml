@@ -1,0 +1,32 @@
+- name: Installing nginx package
+  apt:
+    name: nginx
+    state: present
+
+- name: Starting Nginx Server
+  service:
+    name: nginx
+    state: started
+    enabled: true
+#  register: nginx_service_result
+
+- name: Changing default config file
+  template:
+    src: default.j2
+    dest: /etc/nginx/sites-enabled/default
+  notify: Restart Nginx
+
+- name: Flush Nginx Handlers
+  meta: flush_handlers
+
+- name: Install prometheus-nginx-exporter
+  apt:
+    name: prometheus-nginx-exporter
+    state: present
+
+- name: Enable prometheus-nginx-exporter
+  service:
+    name: prometheus-nginx-exporter
+    state: started
+    enabled: true
+# when: nginx_service_result is defined and nginx_service_result.changed == false

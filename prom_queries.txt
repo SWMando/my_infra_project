@@ -1,0 +1,2 @@
+node_load1
+sum by (instance) (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes)

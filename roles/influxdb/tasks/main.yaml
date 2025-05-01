@@ -1,0 +1,103 @@
+- name: Add InluxDB OSS keyring
+  apt_key:
+    url: https://repos.influxdata.com/influxdata-archive_compat.key
+    state: present
+    keyring: /etc/apt/trusted.gpg.d/influxdata-archive_compat.gpg
+
+- name: Add InfluxDB repository to apt sources
+  apt_repository:
+    repo: "deb [signed-by=/etc/apt/trusted.gpg.d/influxdata-archive_compat.gpg] https://repos.influxdata.com/debian stable main"
+    state: present
+  notify: Update cache
+
+- name: Install InfluxDB OSS
+  apt:
+    name: influxdb
+    state: present
+
+- name: Enable InfluxDB
+  service:
+    name: influxdb
+    state: started
+    enabled: true
+
+- name: InfluxDB config
+  template:
+    src: influxdb.conf.j2
+    dest: /etc/influxdb/influxdb.conf
+  notify: Restart influxdb
+
+- name: Install Telegraf
+  apt:
+    name: telegraf
+    state: present
+
+- name: Telegraf config
+  template:
+    src: telegraf.conf.j2
+    dest: /etc/telegraf/telegraf.conf
+  notify: Restart telegraf
+
+- name: Flushing handlers
+  meta: flush_handlers
+
+- name: Enable Telegraf
+  service:
+    name: telegraf
+    state: started
+    enabled: true
+
+- name: Install influx-stats-exporter
+  get_url:
+    url: https://github.com/carlpett/influxdb_stats_exporter/releases/download/v0.1.1/influx_stats_exporter_linux_amd64
+    dest: /usr/local/bin/influx-stats-exporter
+    mode: '0777'
+
+- name: Template influx-stats-exporter.service
+  template:
+    src: influx-stats-exporter.service.j2
+    dest: /etc/systemd/system/influx-stats-exporter.service
+  notify: Restart systemd
+
+- name: Enable influx-stats-exporter
+  service:
+    name: influx-stats-exporter
+    state: started
+    enabled: true
+
+- name: Create /home/backup/influxdb directory
+  file:
+    path: /home/backup/influxdb
+    state: directory
+    owner: backup
+    group: backup
+
+- name: Template cron job for backup
+  template:
+    src: influxdb-backup.j2
+    dest: /etc/cron.d/influxdb-backup
+  notify: Restart cron
+
+#- name: Set InfluxDB CNAME to dns-record role
+#  include_role:
+#    name: dns-records
+#  vars:
+#    var_record: influxdb
+#    var_host: "{{ inventory_hostname }}"
+
+- name: Append CNAME records of the services to the database file
+  community.general.nsupdate:
+    key_name: "nsupdate.key"
+    key_algorithm: "hmac-sha256"
+    key_secret: "{{ nsupdate_key_secret }}"
+    server: "127.0.0.1"
+    zone: "{{ my_domain }}"
+    record: "{{ item.key }}"
+    type: "CNAME"
+    value: "{{ item.value }}"
+  run_once: true
+  notify: Reload rndc
+  delegate_to: "{{ groups['dns_masters'][0] }}"
+  with_items: "{{ (dns_cname_records | dict2items | slice(12))[3] }}"
+  no_log: true
+

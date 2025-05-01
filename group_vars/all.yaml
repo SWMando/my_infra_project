@@ -1,0 +1,123 @@
+# This section is related to the MySQL User AGAMA Lab 4
+mysql_host: "{{ groups['db_servers'][0] }}"
+mysql_database: agama
+mysql_user: agama
+mysql_password: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          38616635326139326539633061636637383634346665333466336363303564343730626565386431
+          3264346463393130366366663964303734343534613366630a303539383264353335623234643633
+          61336230386338666533326136333531343938313065383063343636663032393031373466643335
+          6633363666653633380a326532633439626466636666376635313663613837346639396332663536
+          3264
+#
+# This section is related to the Lab 5 for DNS role (variable that defines my domain_name)
+my_domain: itqurd.az
+
+#
+# This section is related with Prometheus Labs for prometheus-mysql-exporter (Used to create MySQL user for the exporter)
+mysql_exporter_user: exporter
+mysql_exporter_password: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          65623830376664663433643939663235323863353364383437383930363437663634346163633539
+          6662633336303834376534663237383761323065326530350a373138386337336333383562366161
+          31653433323764383965623733643839376337316461636138666662303061363433353932366339
+          6162636662626161370a366232396435323237656464376566333264316661356134393063623437
+          3963
+#
+# This section is related to Grafana Lab 7 (for grafana user as the username is our github one and password is whichever we want)
+grafana_user: swmando
+# This section is related to Lab 12 (for grafana docker container)
+grafana_port: 3001
+#
+grafana_password: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          32313439363164316431316433653965333565666662376430323963346565363264663230643561
+          6363613562313463383336643639363738336662623235360a653337383635326362346165363934
+          61643962643231326334323939623935393738326335363333616631663935623065353263666636
+          3931376566663335310a366134393832393835616462303036633939613237643965613562636338
+          6163
+#
+# This section is related to Lab 9 where we have to create backup user in MySQL, add to Bind Database, and create system user
+backup_srv_host: backup
+backup_srv_address: 192.168.42.132
+backup_srv_ssh_key: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEu6pFFWyuRrl4WGFPQGElYN9txwTGm2wSntcpVAaN90
+backup_password_mysql: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          66633335336534323730633065323762306262656135333134653234613738353636323862653930
+          3762383137303631353730393339613531396564393731650a366332336665633866336431616134
+          37393663623731623436356265663431643665343531363238373830343632313830623932303130
+          3735626261636130650a353634633932643932663938353165303866336464363635623033393861
+          3536
+#
+# This section is related to Lab 11, for MySQL replication
+replication_user_mysql: replication
+replication_password_mysql: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          37306261636135363561353262313038643761613864386363363264623030356434363337366334
+          6631373539326661386130633964396637383235623530390a656134383130396631356339643134
+          66393163653164376164636433623939353736323266653135663532613335633536373836333135
+          6433323436353232320a386536646131333037346466663434386233376634653166656536643533
+          6461
+#
+# This section is related to Lab 11, so that the MySQL servers have different IDs (needed for replication)
+# By default every server has ID 1
+node_id: "{{ (ansible_port / 100) | int }}"
+# This variable is needed for backups as we now have two servers running MySQL
+mysql_backup_host: "{{ groups['db_servers'] | reject('eq', mysql_host) | first | default(mysql_host) }}"
+#
+# Logic of selecting the host to run MySQL backups on is following:
+# 
+#- for all hosts in db_servers group (groups['db_servers'])...
+#  skip mysql_host which is MySQL source host (| reject('eq', mysql_host))...
+#- from remaining hosts (replicas) select the first one (| first).
+#  if that didn't work, run backups on mysql_host a. k. a. source host (| default(mysql_host))
+# 
+# This will work correctly with 1, 2 or more hosts in db_servers group:
+# 
+#- if the group contains only one host -- backup will be done on that
+#- if the group contains 2 or more hosts -- backup will be done on the first found replica host
+#
+# This section is related to the Lab 13 (number of containers)
+agama_cont: 2
+#
+# This section is related to the Lab 14 (DNS records to be added to db.itqurd.az via nsupdate)
+dns_a_records:
+  backup: 192.168.42.132
+
+#
+# This is secret for transfer.key
+transfer_key_secret: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          39376330666162326539383735356139366664313731323761643334323037306136653763313831
+          3933376434613464656434613733313339333732363834630a356165393564663364383339643332
+          36363038333263343437636433633035366432623332333138613939363630623465366138313966
+          6535383436313737660a363036363564353361353461313063386161336264313134633361346263
+          30333861373864336436623135386364346233303435336237373134343439353566643732366133
+          3835343633623866383832633330636237383966346530323161
+#
+# This is secret for nsupdate.key
+nsupdate_key_secret: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          31336262343438306364623435643462653732376166316530613530363565373561346330363636
+          3837373638653239386638616635393031653461306564640a313863633839333434346633653633
+          65343630313062663535303262613963326237393862366261303762343264636338393837396330
+          3966613565353038300a663162663431616631633136376532653833353437386364326437643562
+          35376266313332663637633133616462366638663436356138663834313231613634653264323565
+          3039613934656263653336613930383432373864353866376131
+#
+# This section is related to the Lab 14 (switching config files domain mappings to CNAMEs)
+dns_cname_records:
+  db-1: "{{ groups['db_servers'][0] }}"
+  db-2: "{{ groups['db_servers'][1] }}"
+  grafana: "{{ groups['grafana'][0] }}"
+  influxdb: "{{ groups['influxdb'][0] }}"
+  lb-1: "{{ groups['haproxy'][0] }}"
+  lb-2: "{{ groups['haproxy'][1] }}"
+  ns-1: "{{ groups['dns_masters'][0] }}"
+  ns-2: "{{ groups['dns_slaves'][0] }}"
+  ns-3: "{{ groups['dns_slaves'][1] }}"
+  prometheus: "{{ groups['prometheus'][0] }}"
+  www-1: "{{ groups['web_servers'][0] }}"
+  www-2: "{{ groups['web_servers'][1] }}"
+
+#

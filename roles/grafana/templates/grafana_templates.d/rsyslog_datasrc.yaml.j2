@@ -1,0 +1,14 @@
+# Configuration file version
+apiVersion: 1
+
+datasources:
+  - name: influxdb-telegraf
+    type: influxdb
+    access: proxy
+    orgId: 1
+    url: http://{{ groups['influxdb'][0] }}:8086
+    database: telegraf
+    uid: ae2vlrewbzhtse
+    isDefault: false
+    version: 1
+    editable: true
