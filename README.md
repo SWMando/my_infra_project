@@ -1,2 +1,2 @@
-# ica0002
-ica0002
+# My Uni Infra Project
+Hope it looks nice :)
